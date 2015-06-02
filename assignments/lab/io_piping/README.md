@@ -7,8 +7,6 @@ Using I/O Redirection can make programming for a beginner level programmer, even
 You can use I/O Redirection to simply manipulate files within the command line or to check thousands of lines of output from a program.
 Once you know the ins and outs of I/O Redirection, programming will be a breeze!
 
------------------------------------------------------------------------------------------
-
 ##What is I/O Redirection?
 
 Often times, it can be necessary for input or output to be received from a file or another program rather than human input.
@@ -73,8 +71,6 @@ Refer to the dup/dup2 man page for more detailed information here:
 Or refer to the textbook from the UCR software construction course Github:
 [Textbook](https://github.com/mikeizbicki/ucr-cs100/blob/2015spring/textbook/assignment-help/syscalls/io.md)
 
------------------------------------------------------------------------------------------
-
 ####But how does `dup()` and `dup2()` work?
 
 We read from the man page that dup uses the lowest-numbered unused file descriptor for the new file decriptor.
@@ -96,8 +92,7 @@ But how do we free up a file descriptor you ask? By using the syscalls `open()` 
 
 ####Using `open()` and `close()` System Calls
 
-To understand the basics of the `open()` and `close()` system calls, we look at their man pages:
-
+First we need to understand the basics of the `open()` and `close()` system calls:
 
 ##### `open()`
 
@@ -121,8 +116,6 @@ Return Value:
 
 Refer to the `close()` man page for more detailed information here:
 [Man Page](http://linux.die.net/man/2/close "man")
-
--------------------------------------------------------------------------------------
 
 `dup()` and `dup2()` pair with these system calls to make functioning i/o Redirection.
 
@@ -172,43 +165,18 @@ In other words, we don’t necessarily have to call `close()` before we call `du
 So in our example, we can achieve the same results doing this:
 
 ```c++
-#include <iostream>
-#include <unistd.h> //dup and dup2
-#include <sys/types.h> //open close
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h> //perror
-using namespace std;
-
-int main()
-{
-	int savestdout = dup(1);
-	//open the file we want the output going to
 	int fd = open("outfile", O_WRONLY|O_CREAT|O_TRUNC, 00664);
-	if(-1 == fd)
-	{
+	if(-1 == fd){
 		perror("Error: open()");
 	}
-	if(dup2(fd, 1) == -1)
-	{
+	if(dup2(fd, 1) == -1){
 		perror("Error: dup");
 	}
-	cout << "This should print to file" << endl;
-	//restore output back to the terminal
-	if(dup2(savestdout, 1) == -1)
-	{
-		perror("Error: dup()");
-	}
-	cout << "This should print to terminal" << endl;
-	return 0;
-}
 ```
 That concludes that `dup` and `dup2` tutorial.
 
 Lab Exercise 1:
 IN PROGRESS
-
------------------------------------------------------------------------------------------
 
 ##What are Pipes?
 
@@ -221,42 +189,42 @@ With pipes, you can become an amazing hacker, maybe even unstoppable..
 (Okay, maybe we will not go that far...)
 
 In the terminal, we symbolize pipes with the pipe command: '|'.
+The form of a command using one pipe is:
+
+```c++
+command -[options] [arguments] | command -[options] [arguments] 
+```
+
+The awesome thing about piping is that you can use more than one pipe to make programming super helpful and a lot more efficient!
+
 Here is a quick example to walk through:
 
-First, make a file in your current directory named `names.txt`. 
-Then add these names to the file, each on a separate line: "Donna, Ann, Dan, Lauren, Leon, Beyonce, Eminem, 50 Cent, Maroon 5, Julia, Jessica, Diane, Megan, Michelle".
-
-Now run the cat command to output the names of the file:
+First, save the "names.txt" file example from this repository into your current directory.
+Now if we run the cat command to output the names of the file:
 
 ```c++
 $ cat names.txt
 ```
-
-As you can see the names are out of order.
+We can see the names are out of order.
 If we want to sort the names, we can use the bash command `sort` to do so using a pipe.
-To do so, run the command:
+To do so, we run the command:
 
 ```c++
 $ cat name.txt | sort
 ```
 
-Now our names are sorted! 
-Yay! :) 
+Now our names are sorited!
 What this command did was it connected the output of the cat process to the input of the sort process.
 So it outputs the context of names.txt AFTER it sorts the contents of the file.
 
-the write end of the pipe is connected to the read end of the next pipe.
-So what happens is, input from the first process is written into the write end of the pipe then the information is read from the read end of the pipe, which is connected to the write end of the previous pipe.
-
-
-For a different example, we will search through the terminal history.
-First type this command into your terminal:
+For a different example, we will search through our terminal history.
+First we run this command in our terminal:
 
 ```c++
 $ history
 ```
 
-Whoa, this prints out ALL your terminal history to stdout.
+Whoa, this prints out ALL the terminal history to stdout.
 To shorten this output a little, or search for a specific command, in this case `g++`, we will use the grep command:
 
 ```c++
@@ -265,13 +233,17 @@ $ history | grep 'g++'
 
 BOOM!!!
 There is now a lot less history than before!
-This command searches through your history and prints out where g++ was typed into the terminal.
+This command searches through your history and prints out instances where g++ was typed into the terminal.
 
-Using the system call `pipe` creates a pipe, a one-way data channel that can be used for communication between two or more processes.
+###How do pipes work?
+
+Pipes have two ends, one for writing and one for reading.
+The write end of the pipe connects to the read end of the pipe, connecting two processes that will run at the same time.
+So what happens is, input from the first process is written into the write end of the pipe.
+Then the information is read from the read end of the pipe, which runs the next process with the output from the first.
+
+Using the system call `pipe()` creates a pipe, a one-way data channel that can be used for communication between two or more processes.
 It takes stdout from the first process and links/pipes/channels/ it to the stdin to the other end of the pipe where the second process waits.
-
-
-NEED TO EXPLAIN PIPE MORE
 
 The pipe system call can be a little confusing to understand.
 First we create an array of integers of size 2 called fd.
@@ -294,17 +266,14 @@ if (result == -1) {
 ```
 
 In this code example, first we create the array of new file descriptors that is needed for the `pipe()` system call.
+
 We need to make sure that the pipe system call is called before the the `fork()` system call.
 This is because we need the pipe to be accessable in both processes.
 If we were to call `pipe()` after we call `fork()` the pipe would only be accessable in the first child and not the others.
 
-
-
 Here is an illistration to better understand pipe:
 
 INSERT PICTURE/CHART HERE
-
------------------------------------------------------------------------------------------
 
 ###Using the `pipe()` System Call
 
@@ -325,11 +294,6 @@ Refer to the `pipe()` man page for more detailed information here:
 
 
 ADD PICTURE/CHART TO SHOW HOW PIPING WORKS WITH FORK()
-
-In this code example, first we create the array of new file descriptors that is needed for the `pipe()` system call.
-We need to make sure that the pipe system call is called before the the `fork()` system call.
-This is because we need the pipe to be accessable in both processes.
-If we were to call `pipe()` after we call `fork()` the pipe would only be accessable in the first child and not the others.
 
 Add more info about how pipe works
 
