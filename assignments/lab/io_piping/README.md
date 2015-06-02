@@ -144,15 +144,29 @@ ALWAYS REMEMBER TO ERROR CHECK!
 You can find the return value of dup() and dup2() on the man pages.
 They return -1 when there is an error.
 
-Note that the value of fd is 1.
+What this block of code does is it saves our standard output of writing to the terminal screen by duplicating the file descriptor 1 and placing it in the next open spot.
+Then we use the `close()` system call to close standard out which is still in file desciptor 1.
+After closing it, standard out is only located in file desciptor 3.
+Next, we call open on fd so that we can open standard output to write to the new file named "outfile".
+The flags located in the second parameter of open indicate that it will have only write permission, a new file will be created if it does not exist already or it appends to the file "outfile" if it already exists.
+
+
+In this git repository, there is a program that uses this example above to better unerstand how `dup()`, `open()`, and close work together.
+If we clone this repo, then we can run the program from this command:
+
+```c++
+$ g++ dup_ex.cpp -o dup && ./dup
+``` 
 Now run:
 
-`$ cat outfile`
+```c++
+$ cat outfile
+```
 
 And we should get:
-
-`fd: 1`
-
+```c++
+fd: 1
+```
 printed to the screen.
 
 We have successfully redirected to a file!
@@ -162,7 +176,7 @@ Equivalently, we can avoid the use of `close()` by using the `dup2()` system cal
 `dup2()` works similarly to `dup()` except that it will close whatever the second parameter is, if it isn’t closed already.
 In other words, we don’t necessarily have to call `close()` before we call `dup2()`.
 
-So in our example, we can achieve the same results doing this:
+So in our example, we can achieve the same results by doing this:
 
 ```c++
 	int fd = open("outfile", O_WRONLY|O_CREAT|O_TRUNC, 00664);
@@ -173,10 +187,25 @@ So in our example, we can achieve the same results doing this:
 		perror("Error: dup");
 	}
 ```
+
+We do the same as above using open to take up the lowest open file descriptor, but instead 
 That concludes that `dup` and `dup2` tutorial.
 
-Lab Exercise 1:
-IN PROGRESS
+##Lab Exercise 1:
+
+Write a program that takes the output from command one and redirects it to an outfile.
+You will need the syscalls: fork, open, dup or dup2, execvp, and wait.
+Your program should be able to handle commands such as command > outfile.
+The commands you need to handle may be told to you explicitly, or you may have to handle any arbitrary command, whichever Mike prefers. 
+Test cases will probably all be of the form command > outfile.
+
+##Lab Exercise 2:
+
+Write a program where the command takes input from an infile.
+You will need the syscalls: fork, open, dup or dup2, execvp, and wait.
+Your program should be able to handle commands such as command < infile.
+The commands you need to handle may be told you explicitly, or you may have to handle any arbitrary command, whichever Mike prefers.
+Test cases will probably all be of the form command < infile.
 
 ##What are Pipes?
 
@@ -242,6 +271,23 @@ The write end of the pipe connects to the read end of the pipe, connecting two p
 So what happens is, input from the first process is written into the write end of the pipe.
 Then the information is read from the read end of the pipe, which runs the next process with the output from the first.
 
+###Using the `pipe()` System Call
+
+First, we can look at the basics of the `pipe()` system call:
+
+`int pipe(int pipefd[2])`
+
+`pipe()` creates a pipe, a unidirectional data channel that can be used for interprocess communication.
+The array `pipefd` is used to return two file descriptors referring to the ends of the pipe.
+`pipefd[0]` refers to the read end of the pipe.
+`pipefd[1]` refers to the write end of the pipe.
+
+Return value: 
+On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
+
+Refer to the `pipe()` man page for more detailed information here:
+[Man Page](https://man7.org/linux/man-pages/man2/dup.2.html "man")
+
 Using the system call `pipe()` creates a pipe, a one-way data channel that can be used for communication between two or more processes.
 It takes stdout from the first process and links/pipes/channels/ it to the stdin to the other end of the pipe where the second process waits.
 
@@ -267,6 +313,8 @@ if (result == -1) {
 
 In this code example, first we create the array of new file descriptors that is needed for the `pipe()` system call.
 
+#### Using `pipe()` with `fork()`
+
 We need to make sure that the pipe system call is called before the the `fork()` system call.
 This is because we need the pipe to be accessable in both processes.
 If we were to call `pipe()` after we call `fork()` the pipe would only be accessable in the first child and not the others.
@@ -275,29 +323,26 @@ Here is an illistration to better understand pipe:
 
 INSERT PICTURE/CHART HERE
 
-###Using the `pipe()` System Call
-
-First, we can look at the basics of the `pipe()` system call:
-
-`int pipe(int pipefd[2])`
-
-`pipe()` creates a pipe, a unidirectional data channel that can be used for interprocess communication.
-The array `pipefd` is used to return two file descriptors referring to the ends of the pipe.
-`pipefd[0]` refers to the read end of the pipe.
-`pipefd[1]` refers to the write end of the pipe.
-
-Return value: 
-On success, zero is returned. On error, -1 is returned, and errno is set appropriately.
-
-Refer to the `pipe()` man page for more detailed information here:
-[Man Page](https://man7.org/linux/man-pages/man2/dup.2.html "man")
-
 
 ADD PICTURE/CHART TO SHOW HOW PIPING WORKS WITH FORK()
 
 Add more info about how pipe works
 
-Exercise (Piping):
-ADD THIS LATER
+##Exercise 3: 
 
-2 exercises, one with just 2 processes and one pipe, one with multiple pipes
+Write a program that takes the output from command 1 and pipes it to the input of command 2.
+You will need the syscalls: pipe, fork, dup or dup2, open, close, execvp, and wait.
+Your program should be able to handle commands such as cat file | grep “something” or  ls | grep “something”
+The commands you need to handle may be told to you explicitly, ls | grep ”something” or you may have to handle any arbitrary command whichever Mike prefers.
+Test cases will probably all be of the form command1 | command2.
+e.g. ls | grep “a.out” should output all your a.out files.
+
+##Exercise 4: 
+
+You will now add onto exercise 1 by adding support for multiple pipes.
+You should now be able to handle cases such as cat testfile | sort | grep “something”.
+As before, commands may be told to you expicitly or you may have to handle any abitrary command whichever mike prefers.
+Test cases will probably all be of the form c1 | c2 | c3
+e.g. ls | sort | grep “a.out” should output a.out 
+
+
