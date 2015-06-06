@@ -1,1 +1,16 @@
-/ 100
+70/ 100
+Last update Sat May 30 10:28:33 2015 -0700
+  -25: memory leak found in valgrind
+==32389== 80 bytes in 1 blocks are definitely lost in loss record 2 of 3 ==32389== definitely lost: 80 bytes in 1 blocks
+
+cd PATH: /20
+     (The prompt must change correctly for all of the cases for full credit)
+    [0/5] Change to a directory above the current working directory.
+    [0/5] Change to a directory specified using an absolute path.
+
+
+extra credit 1: /30
+    [0/10] Catching ^Z and pausing
+    [0/10] fg
+    [0/10] bg
+
