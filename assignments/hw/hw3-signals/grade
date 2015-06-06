@@ -1,7 +1,7 @@
 70/ 100
-Last update Sat May 30 10:28:33 2015 -0700
+Last update Fri May 29 23:55:45 2015 -0700
   -25: memory leak found in valgrind
-==32389== 80 bytes in 1 blocks are definitely lost in loss record 2 of 3 ==32389== definitely lost: 80 bytes in 1 blocks
+==39870== 31 bytes in 1 blocks are definitely lost in loss record 2 of 5 ==39870== 80 bytes in 1 blocks are definitely lost in loss record 4 of 5 ==39870== definitely lost: 111 bytes in 2 blocks
 
 cd PATH: /20
      (The prompt must change correctly for all of the cases for full credit)
